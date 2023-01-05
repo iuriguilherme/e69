@@ -8,4 +8,5 @@ rsync -aSP \
 --delete-after \
 ./ \
 gg:usr/lib/e69/
+echo "Deu certo!"
 
