@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "e69"
+version = "0.1.0"
+description = ""
+authors = ["Iuri Guilherme <2027447+iuriguilherme@users.noreply.github.com>"]
+readme = "README.md"
+packages = [{include = "e69", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+uvicorn = {extras = ["standard"], version = "^0.20.0"}
+fastapi = {extras = ["all"], version = "^0.88.0"}
+
+[tool.poetry.scripts]
+prod = "e69:main(socket = 'uvicorn.socket')"
+test = "e69:main()"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
