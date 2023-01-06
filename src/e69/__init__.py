@@ -3,27 +3,27 @@ e69 - API IOT auto horta
 Copyright (C) 2023 Iuri Guilherme <https://iuri.neocities.org>  
 
 This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
+it under the terms of the GNU Lesser General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.  
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.  
+GNU Lesser General Public License for more details.  
 
-You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.  
 """
 
 import logging
 from fastapi import FastAPI
-from typing import Union
+from typing import Union, Any, Dict, List
 import uvicorn
 
 name: str = 'e69'
 description: str = "API para sistema de automatização de horta urbana"
-version: str = '0.0.0.0'
+version: str = '0.0.0.3' ## TODO migrar pra _version.py
 commit: str = '0000000'
 
 logging.basicConfig(level = "INFO")
@@ -75,15 +75,27 @@ class Config():
     socket: Union[str, None] = None
     forwarded_allow_ips: str = "*"
     timeout_keep_alive: int = 0
-    host: Union[str, None] = "localhost"
-    port: Union[int, None] = 8000
+    host: Union[str, None] = '0.0.0.0'
+    port: Union[int, None] = 8001
     reload: bool = False
 
 api: FastAPI = FastAPI()
 
 @api.get("/")
-async def root():
+async def root() -> dict[str, Union[bool, str]]:
+    """API Root"""
     return {"status": True, "message": "Deu certo!"}
+
+@api.post("/debug/")
+async def debug(data: List | Dict | Any | object = None) \
+-> dict[str, Union[bool, str]]:
+    """Accepts any data"""
+    try:
+        logger.info(f"Recebido: {data}")
+        return {"status": True, "data": str(data) + '\n'}
+    except Exception as e:
+        logger.exception(e)
+        return {"status": False, "data": None, "exception": repr(e)}
 
 def main(
     *args,
@@ -97,6 +109,7 @@ def main(
         if config is None:
             config: Config = Config()
         logger.setLevel(getattr(logging, config.log_level.upper()))
+        [handler.setLevel(level) for handler in logger.handlers]
         if socket is not None:
             config.socket = socket
     except Exception as e:
