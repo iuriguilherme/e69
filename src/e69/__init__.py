@@ -23,7 +23,7 @@ import uvicorn
 
 name: str = 'e69'
 description: str = "API para sistema de automatização de horta urbana"
-version: str = '0.0.0.3' ## TODO migrar pra _version.py
+version: str = '0.0.0.4' ## TODO migrar pra _version.py
 commit: str = '0000000'
 
 logging.basicConfig(level = "INFO")
@@ -76,7 +76,7 @@ class Config():
     forwarded_allow_ips: str = "*"
     timeout_keep_alive: int = 0
     host: Union[str, None] = '0.0.0.0'
-    port: Union[int, None] = 8001
+    port: Union[int, None] = 8000
     reload: bool = False
 
 api: FastAPI = FastAPI()
@@ -92,7 +92,7 @@ async def debug(data: List | Dict | Any | object = None) \
     """Accepts any data"""
     try:
         logger.info(f"Recebido: {data}")
-        return {"status": True, "data": str(data) + '\n'}
+        return {"status": True, "data": data}
     except Exception as e:
         logger.exception(e)
         return {"status": False, "data": None, "exception": repr(e)}
@@ -118,7 +118,9 @@ def main(
     try:
         uvicorn.run(
             app,
-            uds = config.socket,
+            # ~ uds = config.socket,
+            host = config.host,
+            port = int(config.port),
             forwarded_allow_ips = config.forwarded_allow_ips,
             proxy_headers = True,
             timeout_keep_alive = config.timeout_keep_alive,
