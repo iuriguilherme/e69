@@ -183,3 +183,10 @@ $RECYCLE.BIN/
 pyvenv.cfg
 .venv
 pip-selfcheck.json
+
+## Arduino IDE
+credentials.h
+debug.cfg
+debug_custom.json
+esp32.svd
+

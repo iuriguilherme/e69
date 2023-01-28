@@ -23,7 +23,7 @@ import uvicorn
 
 name: str = 'e69'
 description: str = "API para sistema de automatização de horta urbana"
-version: str = '0.0.0.4' ## TODO migrar pra _version.py
+version: str = '0.0.0.7' ## TODO migrar pra _version.py
 commit: str = '0000000'
 
 logging.basicConfig(level = "INFO")

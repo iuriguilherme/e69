@@ -1,8 +1,8 @@
 /*
- *  e69_iot v0.0.0.4
+ *  e69_iot v0.0.0.7
  *  Copyright (C) 2023 Iuri Guilherme <https://iuri.neocities.org>
  * 
- *  Boards:  esp32dev, esp8266
+ *  Boards:  esp32, esp8266
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,47 +18,61 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.  
 */
 
+#include <ESP8266WiFi.h> // ESP8266
+#include <ESP8266HTTPClient.h> // ESP8266
+//~ #include <WiFi.h> // ESP32
+//~ #include <HTTPClient.h> // ESP32
+//~ #include <Wire.h> // ESP32
+#include <Arduino.h> // ESP32
+//~ #include <driver/adc.h> // ESP32
+//~ #include <ESP32AnalogRead.h> // ESP32
+
 #include "ArduinoJson.h"
-#include <ESP8266WiFi.h>
-#include <ESP8266HTTPClient.h>
+
+#include "credentials.h" // WiFi and server information
 
 // TODO add multiple SSID / password strings
 #ifndef ssid
-#define ssid "aifaidovizinho"
-#define password  "temquefazerumquete"
-#define version "0.0.0.4" // software version
-#define plant "0" // UUID of this IOT
+#define ssid "None"
 #endif
-#define host "192.168.0.254"
-#define port "8000"
+#ifndef password
+#define password  "None"
+#endif
+#define version "0.0.0.7" // software version
+#define plant "0esp8266" // UUID of this IOT
+#ifndef host
+#define host "localhost"
+#endif
+#ifndef port
+#define port "0"
+#endif
 #define serialPort 9600
-#define soilMoisturePin A0  // ESP8266
-//#define soilMoisturePin 4  // ESP32
-#define led LED_BUILTIN
-#define interval 6000
-#define minMoisture 0
-#define maxMoisture 1024
-float epsilon = 0.01;
-float lastMoisture = 0.0;
+#define soilMoisturePin A0 // ESP8266
+//~ #define soilMoisturePin 34 // ESP32
+#define led LED_BUILTIN // ESP8266
+//~ #define led 2 // ESP32
+#define liga LOW // ESP8266
+#define desliga HIGH // ESP8266
+//~ #define liga HIGH // ESP32
+//~ #define desliga LOW // ESP32
+#define interval 3000 // três segundos
+#define minMoisture 0 // ESP8266
+#define maxMoisture 1024 // ESP8266
+//~ #define maxMoisture 4096 // ESP32
+//~ float epsilon = 0.01;
+int lastMoisture = maxMoisture;
+int nextMoisture = minMoisture;
 
-float readAnalog(int pin) {
-  return analogRead(pin);
-}
-
-int readDigital(int pin) {
-  return digitalRead(pin);
-}
-
-bool compareFloat(float f1, float f2, float e) {
-  return (((f1 - f2) > e) or ((f2 - f1) > e));
-}
+//~ bool compareFloat(float f1, float f2, float e) {
+  //~ return (((f1 - f2) > e) or ((f2 - f1) > e));
+//~ }
 
 void wifiConnect() {
   WiFi.begin(ssid, password);
   Serial.print("Connecting on ");
-  Serial.print(ssid);
+  //Serial.print(ssid);
   Serial.print(" with password ");
-  Serial.print(password);
+  //Serial.print(password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
@@ -68,30 +82,56 @@ void wifiConnect() {
   Serial.println(WiFi.localIP());
 }
 
+void blink(int limit) {
+  for (int i = 0; i < limit; i++) {
+    digitalWrite(led, liga);
+    delay(300);
+    digitalWrite(led, desliga);
+    delay(150);
+  }
+}
+
 void setup() {
-  Serial.begin(serialPort); // setup serial monitor
-  while(!Serial);
   pinMode(led, OUTPUT); // setup led
-  digitalWrite(led, HIGH); // led off esp8266
-  pinMode(soilMoisturePin, INPUT);
+  blink(3);
+  digitalWrite(led, desliga);
+  Serial.begin(serialPort); // setup serial monitor
+  while(!Serial); // ESP8266
+  pinMode(soilMoisturePin, INPUT); // ESP8266
+  //~ adc.attach(soilMoisturePin); // ESP32
+  //~ adc_power_on(); // ESP32
+  //~ adc_gpio_init(ADC_UNIT_1, ADC_CHANNEL_6); // ESP32
+  //~ adc1_config_width(ADC_WIDTH_12Bit); // ESP32
+  //~ adc1_config_width(ADC_WIDHT_BIT_12);
+  //~ adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_0db); // ESP32
   wifiConnect();
 }
 
 void loop() {
   delay(interval);
-  digitalWrite(led, LOW); // esp8266 led on
-  delay(1000);
-  float nextMoisture = readAnalog(soilMoisturePin);
-  if (compareFloat(nextMoisture, lastMoisture, epsilon)) {
+  digitalWrite(led, liga);
+  delay(1);
+  nextMoisture = analogRead(soilMoisturePin); // ESP8266
+  //~ nextMoisture = adc1_get_raw(ADC1_CHANNEL_6); // ESP32
+  //~ nextMoisture = adc.readVoltage(); // ESP32;
+  Serial.printf("nextMoisture: %d\n", nextMoisture);
+  if (nextMoisture < lastMoisture) {
     lastMoisture = nextMoisture;
-    int percentMoisture = map(lastMoisture, minMoisture, maxMoisture, 0, 100);
-    Serial.printf("Moisture: %f, change: %d%%\n", lastMoisture, percentMoisture);
+    int percentMoisture = map(lastMoisture, maxMoisture, minMoisture, 0, 100);
+    Serial.printf("lastMoisture: %d\n", lastMoisture);
+    Serial.printf("minMoisture: %d\n", minMoisture);
+    Serial.printf("maxMoisture: %d\n", maxMoisture);
+    Serial.printf("change: %d%%\n", percentMoisture);
     if ((WiFi.status() == WL_CONNECTED)) {
       WiFiClient client;
       HTTPClient http;
       DynamicJsonDocument payload(2048);
       payload["version"] = (String) version;
-      payload["moisture"] = (float) lastMoisture;
+      payload["percentMoisture"] = (int) percentMoisture;
+      payload["nextMoisture"] = (int) nextMoisture;
+      payload["lastMoisture"] = (int) lastMoisture;
+      payload["minMoisture"] = (int) minMoisture;
+      payload["maxMoisture"] = (int) maxMoisture;
       payload["plant"] = (String) plant;
       String json;
       json.reserve(2048);
@@ -110,12 +150,11 @@ void loop() {
       } else {
         Serial.printf("[HTTP] POST... failed, error: %s\n", http.errorToString(httpCode).c_str());
       }
-
       http.end();
     } else {
       wifiConnect();
     }
   }
   delay(1);
-  digitalWrite(led, HIGH); // esp8266 led off
+  digitalWrite(led, desliga);
 }
