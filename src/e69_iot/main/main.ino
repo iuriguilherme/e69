@@ -1,5 +1,5 @@
 /*
- *  e69_iot v0.0.0.7
+ *  e69_iot v0.0.0.10
  *  Copyright (C) 2023 Iuri Guilherme <https://iuri.neocities.org>
  * 
  *  Boards:  esp32, esp8266
@@ -38,8 +38,8 @@
 #ifndef password
 #define password  "None"
 #endif
-#define version "0.0.0.7" // software version
-#define plant "0esp8266" // UUID of this IOT
+#define version "0.0.0.10" // software version
+#define plant "0-esp8266" // UUID of this IOT
 #ifndef host
 #define host "localhost"
 #endif
@@ -60,8 +60,8 @@
 #define maxMoisture 1024 // ESP8266
 //~ #define maxMoisture 4096 // ESP32
 //~ float epsilon = 0.01;
-int lastMoisture = maxMoisture;
-int nextMoisture = minMoisture;
+int lastMoisture = minMoisture;
+int nextMoisture = maxMoisture;
 
 //~ bool compareFloat(float f1, float f2, float e) {
   //~ return (((f1 - f2) > e) or ((f2 - f1) > e));
@@ -114,13 +114,13 @@ void loop() {
   nextMoisture = analogRead(soilMoisturePin); // ESP8266
   //~ nextMoisture = adc1_get_raw(ADC1_CHANNEL_6); // ESP32
   //~ nextMoisture = adc.readVoltage(); // ESP32;
-  Serial.printf("nextMoisture: %d\n", nextMoisture);
-  if (nextMoisture < lastMoisture) {
+  Serial.printf("Moisture: %d\n", nextMoisture);
+  if (nextMoisture != lastMoisture) {
     lastMoisture = nextMoisture;
     int percentMoisture = map(lastMoisture, maxMoisture, minMoisture, 0, 100);
-    Serial.printf("lastMoisture: %d\n", lastMoisture);
-    Serial.printf("minMoisture: %d\n", minMoisture);
-    Serial.printf("maxMoisture: %d\n", maxMoisture);
+    Serial.printf("Moisture: %d\n", lastMoisture);
+    Serial.printf("min: %d\n", minMoisture);
+    Serial.printf("max: %d\n", maxMoisture);
     Serial.printf("change: %d%%\n", percentMoisture);
     if ((WiFi.status() == WL_CONNECTED)) {
       WiFiClient client;
@@ -128,7 +128,6 @@ void loop() {
       DynamicJsonDocument payload(2048);
       payload["version"] = (String) version;
       payload["percentMoisture"] = (int) percentMoisture;
-      payload["nextMoisture"] = (int) nextMoisture;
       payload["lastMoisture"] = (int) lastMoisture;
       payload["minMoisture"] = (int) minMoisture;
       payload["maxMoisture"] = (int) maxMoisture;

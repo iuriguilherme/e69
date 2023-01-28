@@ -21,9 +21,9 @@ from fastapi import FastAPI
 from typing import Union, Any, Dict, List
 import uvicorn
 
-name: str = 'e69'
+name: str = 'e69' ## TODO inventar um nome pro projeto
 description: str = "API para sistema de automatização de horta urbana"
-version: str = '0.0.0.7' ## TODO migrar pra _version.py
+version: str = '0.0.0.10' ## TODO migrar pra _version.py
 commit: str = '0000000'
 
 logging.basicConfig(level = "INFO")
